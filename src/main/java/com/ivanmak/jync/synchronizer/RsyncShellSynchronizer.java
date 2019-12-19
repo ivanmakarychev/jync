@@ -2,25 +2,25 @@ package com.ivanmak.jync.synchronizer;
 
 import com.ivanmak.jync.Config;
 import com.ivanmak.jync.model.FileSystemEvent;
-import com.ivanmak.jync.watcher.FileSystemEventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * Synchronizes directories using rsync shell command
  *
  * Created by Ivan Makarychev on 2019-10-23.
  */
-@Service
-class RsyncShellSynchronizer implements FileSystemEventHandler {
+@Component
+class RsyncShellSynchronizer {
 
     private final Config config;
     private final Logger log;
@@ -49,7 +49,8 @@ class RsyncShellSynchronizer implements FileSystemEventHandler {
         }
     }
 
-    @Override
+    @Async
+    @EventListener
     public void handle(FileSystemEvent event) {
         log.info("Start synchronizing");
         processBuilderList.forEach(pb -> {

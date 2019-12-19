@@ -5,6 +5,7 @@ import com.ivanmak.jync.model.FileSystemEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -25,14 +26,15 @@ public class Watcher implements Runnable {
     private final WatchService watcher;
     private final Config config;
     private final Logger log;
-    private final List<FileSystemEventHandler> listeners;
+    private final ApplicationEventPublisher publisher;
 
     @Autowired
-    public Watcher(Config config, List<FileSystemEventHandler> listeners) throws IOException {
+    public Watcher(Config config,
+                   ApplicationEventPublisher publisher) throws IOException {
         this.config = config;
+        this.publisher = publisher;
         log = LoggerFactory.getLogger(this.getClass());
         watcher = FileSystems.getDefault().newWatchService();
-        this.listeners = listeners;
     }
 
     @PostConstruct
@@ -71,9 +73,8 @@ public class Watcher implements Runnable {
                 WatchEvent<Path> ev = (WatchEvent<Path>)event;
                 Path filename = ev.context();
                 log.info("Got filename: " + filename);
-                FileSystemEvent event1 = new FileSystemEvent(filename.getFileName().toString(), new Date());
-                listeners.forEach(listener -> listener.handle(event1));
-                log.info("All listeners notified");
+                publisher.publishEvent(new FileSystemEvent(filename.getFileName().toString(), new Date()));
+                log.debug("Event for file {} published", filename);
             }
 
             boolean valid = key.reset();
